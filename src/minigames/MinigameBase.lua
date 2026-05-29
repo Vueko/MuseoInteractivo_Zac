@@ -16,12 +16,14 @@ function Base.clamp(v, lo, hi) return math.max(lo, math.min(hi, v)) end
 -- Constructor --
 function Base.new(cfg)
     local self = setmetatable({}, Base)
-    self.cfg      = cfg
-    self.state    = "intro"   
-    self.timer    = 0
-    self.introT   = 0
-    self.fadeOut  = 0         
-    self.result   = nil       
+    self.cfg        = cfg
+    self.state      = "intro"
+    self.timer      = 0
+    self.introT     = 0
+    self.fadeOut    = 0
+    self.result     = nil
+    self.outroIndex = 1
+    self.outroAlpha = 0
     return self
 end
 
@@ -54,10 +56,12 @@ end
 -- enter / update / draw --
 
 function Base:enter(data)
-    self.data   = data
-    self.state  = "intro"
-    self.introT = 0
-    self.timer  = 0
+    self.data       = data
+    self.state      = "intro"
+    self.introT     = 0
+    self.timer      = 0
+    self.outroIndex = 1
+    self.outroAlpha = 0
     self:onEnter(data)
 end
 
@@ -72,9 +76,15 @@ function Base:update(dt)
 
     elseif self.state == "success" then
         self.fadeOut = Base.clamp(self.fadeOut + dt * 0.5, 0, 1)
-        if self.timer > 3.2 then
-            SceneManager.pop()
+        if self.timer > 2.0 then
+            self.state      = "outro"
+            self.timer      = 0
+            self.outroIndex = 1
+            self.outroAlpha = 0
         end
+
+    elseif self.state == "outro" then
+        self.outroAlpha = math.min(1, self.outroAlpha + dt * 1.5)
 
     elseif self.state == "fail" then
     end
@@ -91,6 +101,9 @@ function Base:draw()
     elseif self.state == "success" then
         self:onDraw()
         self:drawResult(W, H, true)
+    elseif self.state == "outro" then
+        self:onDraw()
+        self:drawOutro(W, H)
     elseif self.state == "fail" then
         self:onDraw()
         self:drawResult(W, H, false)
@@ -260,6 +273,10 @@ function Base:keypressed(key)
         end
     elseif self.state == "playing" then
         self:onKeypressed(key)
+    elseif self.state == "outro" then
+        if key == "return" or key == "space" or key == "e" then
+            self:advanceOutro()
+        end
     elseif self.state == "fail" then
         if key == "return" or key == "r" then
             self:enter(self.data)
@@ -285,6 +302,8 @@ function Base:mousepressed(x, y, button)
             return
         end
         self:onMousepressed(x, y, button)
+    elseif self.state == "outro" then
+        self:advanceOutro()
     elseif self.state == "fail" then
         local bw2, bh2 = 180, 44
         local pw, ph = 500, 260
@@ -303,5 +322,51 @@ end
 function Base:leave() end
 function Base:pause() end
 function Base:resume() end
+
+function Base:advanceOutro()
+    self.outroIndex = self.outroIndex + 1
+    self.outroAlpha = 0
+    if self.outroIndex > 2 then
+        local GS = require("src.data.GameState")
+        if self.cfg.id then
+            GS.completed[self.cfg.id] = true
+        end
+        SceneManager.pop()
+    end
+end
+
+function Base:drawOutro(W, H)
+    local D       = require("src.data.CampaignData")
+    local chapter = D.chapters[self.cfg.id]
+    if not chapter then SceneManager.pop(); return end
+
+    local screens = {
+        { text = chapter.quote.text, footer = "— " .. chapter.quote.speaker },
+        { text = chapter.bridge,     footer = nil },
+    }
+    local screen = screens[self.outroIndex]
+    if not screen then SceneManager.pop(); return end
+
+    local a = self.outroAlpha
+
+    love.graphics.setColor(0, 0, 0, 0.88 * a)
+    love.graphics.rectangle("fill", 0, 0, W, H)
+
+    love.graphics.setColor(1, 0.92, 0.82, a)
+    love.graphics.push()
+    love.graphics.translate(W / 2, H / 2 - 60)
+    love.graphics.scale(1.35, 1.35)
+    love.graphics.printf(screen.text, -240, 0, 480, "center")
+    love.graphics.pop()
+
+    if screen.footer then
+        love.graphics.setColor(0.65, 0.65, 0.65, a)
+        love.graphics.printf(screen.footer, 0, H / 2 + 60, W, "center")
+    end
+
+    local pulse = 0.5 + 0.5 * math.sin(love.timer.getTime() * 3.5)
+    love.graphics.setColor(0.55, 0.52, 0.48, a * pulse)
+    love.graphics.printf("Presiona ESPACIO para continuar", 0, H - 48, W, "center")
+end
 
 return Base

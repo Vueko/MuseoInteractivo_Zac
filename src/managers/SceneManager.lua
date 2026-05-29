@@ -5,6 +5,7 @@ local scenes = {}
 local sceneModules = {
     intro = "src.scenes.IntroScene",
     museum = "src.scenes.MuseumScene",
+    ending = "src.scenes.EndingScene",
 
     mg_prehispanico = "src.minigames.MG_Prehispanico",
     mg_conquista = "src.minigames.MgConquista",

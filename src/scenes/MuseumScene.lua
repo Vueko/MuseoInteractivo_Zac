@@ -1,6 +1,7 @@
 local SceneManager = require("src.managers.SceneManager")
 local InputManager = require("src.managers.InputManager")
 local C = require("src.conf.Constants")
+local GS = require("src.data.GameState")
 
 local MuseumScene = {}
 
@@ -87,7 +88,11 @@ function MuseumScene:draw()
         love.graphics.setColor(0, 0, 0, 0.3)
         love.graphics.rectangle("fill", p.x + 10, p.y + 10, p.w + 20, p.h + 20, 5, 5)
         
-        love.graphics.setColor(C.COLOR.ORO_PLATA)
+        if GS.completed[p.period.id] then
+            love.graphics.setColor(C.COLOR.PLATA)
+        else
+            love.graphics.setColor(C.COLOR.ORO_PLATA)
+        end
         love.graphics.rectangle("fill", p.x - 15, p.y - 15, p.w + 30, p.h + 30, 5, 5)
         
         love.graphics.setColor(0.1, 0.1, 0.1, 1)
@@ -107,7 +112,12 @@ function MuseumScene:draw()
         
         love.graphics.setColor(0, 0, 0, 1)
         love.graphics.printf(p.period.label, plaqueX, plaqueY + 12, plaqueW, "center")
-        
+
+        if GS.completed[p.period.id] then
+            love.graphics.setColor(0.25, 0.80, 0.35, 1)
+            love.graphics.printf("✓", p.x, p.y + p.h + 42, p.w, "center")
+        end
+
         local dist = math.abs(player.x - (p.x + p.w/2))
         if dist < 180 then
             activePainting = p
@@ -165,6 +175,15 @@ function MuseumScene:keypressed(key)
             end
         end
     end
+end
+
+function MuseumScene:resume()
+    if GS.endingShown then return end
+    for _, p in ipairs(C.PERIODS) do
+        if not GS.completed[p.id] then return end
+    end
+    GS.endingShown = true
+    SceneManager.switch("ending")
 end
 
 return MuseumScene

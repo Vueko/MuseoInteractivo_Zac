@@ -5,16 +5,12 @@ local MG = setmetatable({}, { __index = Base })
 MG.__index = MG
 
 local CFG = {
-    title        = "⚡  Los Zacatecos — Tower Defense",
+    id           = "mg_prehispanico",
+    title        = "Los Zacatecos — Tower Defense",
     subtitle     = "~200 a.C. – 1546 d.C.",
     accentColor  = {0.65, 0.42, 0.15, 1},
     bgColor      = {0.08, 0.05, 0.02, 1},
-    instructions =
-        "Defiende tu aldea de los intrusos en este Tower Defense\n\n"..
-        "• Mueve a tu HÉROE con ← → (o A/D)\n"..
-        "• Presiona ESPACIO para lanzar tu lanza\n"..
-        "• Usa CLICK IZQUIERDO en el campo para construir TORRES (Costo: 5 oro)\n"..
-        "• ¡Sobrevive a las 3 oleadas para ganar!",
+    instructions = "Defiende tu aldea de los colonizadores.\nSOBREVIVE 3 OLEADAS.",
 }
 
 local WORLD_W, WORLD_H = 1280, 720
@@ -40,12 +36,7 @@ local spawnTimer   = 0
 
 local bgScroll     = 0
 
-local cinematicTexts = {
-    "Zacatecas, Siglo XVI.\n\nEl descubrimiento de inmensas vetas de plata ha atraído a cientos de colonizadores a tierras inexploradas.",
-    "Sin embargo, este territorio no está vacío. Los valientes pueblos nativos, como los Caxcanes y los Zacatecos, protegerán su hogar.",
-    "A la encarnizada defensa de estas tierras se le conoce como la Guerra Chichimeca (1550 - 1590).",
-    "¡Eres un guerrero defendiendo tu aldea!\n\nUtiliza tu lanza, recolecta oro y construye torres para repeler el avance de los colonizadores."
-}
+local cinematicTexts = {}
 local cinematicIndex = 1
 local cinematicAlpha = 0
 
@@ -62,6 +53,8 @@ function MG.new()
 end
 
 function MG:onEnter(data)
+    local D = require("src.data.CampaignData")
+    cinematicTexts = D.chapters["mg_prehispanico"].opening
     warrior = {
         x = WORLD_W / 2, y = WORLD_H - 110,
         w = 44, h = 70,
